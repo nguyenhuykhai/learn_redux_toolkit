@@ -1,9 +1,14 @@
-import React from "react";
 import TimeAgo from "./TimeAgo";
 import TodoAuthor from "./TodoAuthor";
 import { Link } from 'react-router-dom';
+import ReactionButtons from "./ReactionButtons";
 
-const TodosExcerpt = ({ todo }) => {
+import { useSelector } from "react-redux";
+import { selectTodoById } from "./todosSlice";
+
+const TodosExcerpt = ({ todoId }) => {
+  const todo = useSelector(state => selectTodoById(state, todoId));
+
   return (
     <article>
       <h3>{todo.title}</h3>
@@ -14,6 +19,7 @@ const TodosExcerpt = ({ todo }) => {
         <br />
         <Link to={`todo/${todo.id}`}>View Todo</Link>
       </p>
+      <ReactionButtons todo={todo} />
     </article>
   );
 };

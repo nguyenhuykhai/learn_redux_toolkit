@@ -1,36 +1,22 @@
-import { useSelector, useDispatch } from "react-redux";
-import {
-  selectAllTodos,
-  getTodosStatus,
-  getTodosError,
-  fetchTodos,
-} from "./todosSlice";
-import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { selectTodoIds, getTodosStatus, getTodosError } from "./todosSlice";
 import TodosExcerpt from "./TodosExcerpt";
 
 const TodoList = () => {
-  const dispatch = useDispatch();
 
-  const todos = useSelector(selectAllTodos);
+  const orderedTodoIds = useSelector(selectTodoIds);
   const todoStatus = useSelector(getTodosStatus);
   const error = useSelector(getTodosError);
-
-  useEffect(() => {
-    if (todoStatus === "idle") {
-      dispatch(fetchTodos());
-    }
-  }, [todoStatus, dispatch]);
 
   let content;
   if (todoStatus === "loading") {
     content = <p>"Loading..."</p>;
   } else if (todoStatus === "succeeded") {
-    const orderdTodo = todos.slice().sort((a, b) => b.date.localeCompare(a.date));
-    content = orderdTodo.map(todo => <TodosExcerpt key={todo.id} todo={todo} />)
+    content = orderedTodoIds.map((todoId) => ( <TodosExcerpt key={todoId} todoId={todoId} />));
   } else if (todoStatus === "failed") {
     content = <p>{error}</p>;
   }
-
+  
   return (
     <section>
       <h2>Todos</h2>

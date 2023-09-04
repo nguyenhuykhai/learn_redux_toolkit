@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux'
 import { selectTodoById } from './todosSlice'
 
+import ReactionButtons from "./ReactionButtons";
 import TodoAuthor from "./TodoAuthor";
 import TimeAgo from "./TimeAgo";
 
@@ -30,6 +31,7 @@ const SingleTodoPage = () => {
                 <br />
                 <Link to={`/todo/edit/${todo.id}`}>Edit Todo</Link>
             </p>
+            <ReactionButtons todo={todo} />
         </article>
     )
 }

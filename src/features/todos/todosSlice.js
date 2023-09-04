@@ -1,14 +1,18 @@
-import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createSelector, createAsyncThunk, createEntityAdapter } from "@reduxjs/toolkit";
 import { sub } from "date-fns";
 import axios from "axios";
 
 const TODOS_URL = 'https://jsonplaceholder.typicode.com/todos'
 
-const initialState = {
-    todos: [],
+const todosAdapter = createEntityAdapter({
+    sortComparer: (a,b) => b.date.localeCompare(a.date)
+})
+
+const initialState = todosAdapter.getInitialState({
     status: 'idle', //'idle' | 'loading' | 'succeeded' | 'failed'
-    error: null
-}
+    error: null,
+    count: 0
+})
 
 export const fetchTodos = createAsyncThunk('todos/fetchPosts', async () => {
     const response = await axios.get(TODOS_URL)
@@ -46,22 +50,32 @@ const todosSlice = createSlice({
     name: 'todos',
     initialState,
     reducers: {
-        todoAdded: {
-            reducer(state, action) {
-                state.todos.push(action.payload)
-            },
-            prepare(title, completed, userId) {
-                return {
-                    payload: {
-                        id: nanoid(),
-                        title,
-                        completed,
-                        date: new Date().toISOString(),
-                        userId,
-                    }
-                }
+        reactionAdded:(state, action) => {
+            const { todoId, reaction } = action.payload;
+            const existingTodo = state.entities[todoId];
+            if (existingTodo) {
+                existingTodo.reactions[reaction]++
             }
+        },
+        increaseCount(state, action ){
+            state.count = state.count + 1
         }
+        // todoAdded: {
+        //     reducer(state, action) {
+        //         state.todos.push(action.payload)
+        //     },
+        //     prepare(title, completed, userId) {
+        //         return {
+        //             payload: {
+        //                 id: nanoid(),
+        //                 title,
+        //                 completed,
+        //                 date: new Date().toISOString(),
+        //                 userId,
+        //             }
+        //         }
+        //     }
+        // }
     },
     extraReducers(builder) {
         builder
@@ -74,9 +88,22 @@ const todosSlice = createSlice({
                 let min = 1;
                 const loadedTodos = action.payload.map(todo => {
                     todo.date = sub(new Date(), { minutes: min++ }).toISOString();
+                    todo.reactions = {
+                        thumbsUp: 0,
+                        wow: 0,
+                        heart: 0,
+                        rocket: 0,
+                        coffee: 0
+                    }
                     return todo
                 })
-                state.todos = state.todos.concat(loadedTodos);
+
+                /* Update hoặc thêm mới nhiều thực thể state
+                   ---------------Dạng cơ bản---------------
+                   state.todos = state.todos.concat(loadedTodos);
+                   -----------Sử dụng Redux Toolkit------------*/
+
+                todosAdapter.upsertMany(state, loadedTodos);
             })
             .addCase(fetchTodos.rejected, (state, action) => {
                 state.status = 'failed'
@@ -97,8 +124,22 @@ const todosSlice = createSlice({
 
                 action.payload.userId = Number(action.payload.userId)
                 action.payload.date = new Date().toISOString();
+                action.payload.reactions = {
+                    thumbsUp: 0,
+                    wow: 0,
+                    heart: 0,
+                    rocket: 0,
+                    coffee: 0
+                }
                 console.log(action.payload)
-                state.todos.push(action.payload)
+
+                /*        Thêm mới một thực thể state
+                   ---------------Dạng cơ bản---------------
+                        state.todos.push(action.payload)
+                   -----------Sử dụng Redux Toolkit--------*/
+
+                todosAdapter.addOne(state, action.payload)
+                
             })
             .addCase(updateTodo.fulfilled, (state, action) => {
                 if (!action.payload?.id) {
@@ -108,8 +149,15 @@ const todosSlice = createSlice({
                 }
                 const { id } = action.payload;
                 action.payload.date = new Date().toISOString();
-                const todos = state.todos.filter(todo => todo.id !== id);
-                state.todos = [...todos, action.payload];
+
+                /*         Update một thực thể state
+                   ---------------Dạng cơ bản---------------
+                   const todos = state.todos.filter(todo => todo.id !== id);
+                   state.todos = [...todos, action.payload];
+                   -----------Sử dụng Redux Toolkit--------*/
+                
+                todosAdapter.upsertOne(state, action.payload)
+                
             })
             .addCase(deleteTodo.fulfilled, (state, action) => {
                 if (!action.payload?.id) {
@@ -117,20 +165,36 @@ const todosSlice = createSlice({
                     console.log(action.payload)
                     return;
                 }
+
+                /*         Xóa một thực thể state
+                   ---------------Dạng cơ bản---------------
+                   const todos = state.todos.filter(todo => todo.id !== id);
+                   state.todos = todos;
+                   -----------Sử dụng Redux Toolkit--------*/
+
                 const { id } = action.payload;
-                const todos = state.todos.filter(todo => todo.id !== id);
-                state.todos = todos;
+                todosAdapter.removeOne(state, id)
             })
     }
 })
 
-export const selectAllTodos = (state) => state.todos.todos;
+//getSelectors creates these selectors and we rename them with aliases using destructuring
+export const {
+    selectAll: selectAllTodos,
+    selectById: selectTodoById,
+    selectIds: selectTodoIds
+    // Pass in a selector that returns the posts slice of state
+} = todosAdapter.getSelectors(state => state.todos)
+
 export const getTodosStatus = (state) => state.todos.status;
 export const getTodosError = (state) => state.todos.error;
+export const getCount = (state) => state.todos.count;
 
-export const selectTodoById = (state, todoId) =>
-    state.todos.todos.find(todo => todo.id === todoId);
+export const selectTodosByUser = createSelector(
+    [selectAllTodos, (state, userId) => userId],
+    (todos, userId) => todos.filter(todo => todo.userId === userId) // Select todo has userId === userId, return Array
+)
 
-export const { todoAdded } = todosSlice.actions
+export const { increaseCount, reactionAdded } = todosSlice.actions
 
 export default todosSlice.reducer
