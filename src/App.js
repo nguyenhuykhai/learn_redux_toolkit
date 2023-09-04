@@ -1,24 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import TodoList from "./features/todos/TodoList";
+import { Routes, Route } from 'react-router-dom';
+import Layout from "./components/Layout";
+import AddPostForm from "./features/todos/AddTodoForm";
+import SingleTodoPage from "./features/todos/SingleTodoPage";
+import EditTodoForm from "./features/todos/EditTodoForm";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+
+        <Route index element={<TodoList />} />
+
+        <Route path="todo">
+          <Route index element={<AddPostForm />} />
+          <Route path=":todoId" element={<SingleTodoPage />} />
+          <Route path="edit/:todoId" element={<EditTodoForm />} />
+        </Route>
+
+      </Route>
+    </Routes>
   );
 }
 
