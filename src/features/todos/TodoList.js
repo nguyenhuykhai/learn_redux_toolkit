@@ -1,19 +1,23 @@
 import { useSelector } from "react-redux";
-import { selectTodoIds, getTodosStatus, getTodosError } from "./todosSlice";
+import { selectTodoIds, useGetTodosQuery } from "./todosSlice";
 import TodosExcerpt from "./TodosExcerpt";
 
 const TodoList = () => {
+  const {
+    isLoading,
+    isSuccess,
+    isError,
+    error
+  } = useGetTodosQuery()
 
   const orderedTodoIds = useSelector(selectTodoIds);
-  const todoStatus = useSelector(getTodosStatus);
-  const error = useSelector(getTodosError);
 
   let content;
-  if (todoStatus === "loading") {
+  if (isLoading) {
     content = <p>"Loading..."</p>;
-  } else if (todoStatus === "succeeded") {
-    content = orderedTodoIds.map((todoId) => ( <TodosExcerpt key={todoId} todoId={todoId} />));
-  } else if (todoStatus === "failed") {
+  } else if (isSuccess) {
+    content = orderedTodoIds.map(todoId => <TodosExcerpt key={todoId} todoId={todoId} />);
+  } else if (isError) {
     content = <p>{error}</p>;
   }
   

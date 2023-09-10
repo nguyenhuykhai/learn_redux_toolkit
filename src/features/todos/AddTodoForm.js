@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-import { addNewTodo } from "./todosSlice";
 import { selectAllUsers } from "../users/usersSlice";
 import { useNavigate } from "react-router-dom";
+import { useAddNewTodoMutation } from "./todosSlice";
 
 const AddPostForm = () => {
-  const dispatch = useDispatch();
+  const [addNewTodo, { isLoading }] = useAddNewTodoMutation()
 
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [completed, setCompleted] = useState(false);
   const [userId, setUserId] = useState("");
-  const [addRequestStatus, setAddRequestStatus] = useState("idle");
 
   const users = useSelector(selectAllUsers);
 
@@ -24,15 +23,12 @@ const AddPostForm = () => {
   }
   const onAuthorChanged = (e) => setUserId(e.target.value);
 
-  const canSave =
-    [title, userId].every(Boolean) && addRequestStatus === "idle";
+  const canSave = [title, userId].every(Boolean) && !isLoading;
 
-  const onSaveTodoClicked = () => {
+  const onSaveTodoClicked = async () => {
     if (canSave) {
       try {
-        console.log("SUBMIT: ", completed)
-        setAddRequestStatus("pending");
-        dispatch(addNewTodo({ title, completed: completed, userId })).unwrap();
+        await addNewTodo({ title, completed: completed, userId }).unwrap()
 
         setTitle("");
         setCompleted(false);
@@ -40,13 +36,11 @@ const AddPostForm = () => {
         navigate("/");
       } catch (err) {
         console.error("Failed to save the post", err);
-      } finally {
-        setAddRequestStatus("idle");
       }
     }
   };
 
-  const usersOptions = users.map((user) => (
+  const usersOptions = users.map(user => (
     <option key={user.id} value={user.id}>
       {user.name}
     </option>

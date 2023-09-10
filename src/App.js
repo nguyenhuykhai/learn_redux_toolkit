@@ -1,11 +1,11 @@
 import TodoList from "./features/todos/TodoList";
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from "./components/Layout";
 import AddPostForm from "./features/todos/AddTodoForm";
 import SingleTodoPage from "./features/todos/SingleTodoPage";
 import EditTodoForm from "./features/todos/EditTodoForm";
 import UsersList from "./features/users/UserList"
 import UserPage from "./features/users/UserPage"
+import Layout from "./components/Layout";
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
   return (

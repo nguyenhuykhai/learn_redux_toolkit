@@ -1,5 +1,4 @@
-import { useDispatch } from "react-redux";
-import { reactionAdded } from "./todosSlice";
+import { useAddReactionMutation } from './todosSlice' 
 
 const reactionEmoji = {
     thumbsUp: '👍',
@@ -10,7 +9,7 @@ const reactionEmoji = {
 }
 
 const ReactionButtons = ({ todo }) => {
-    const dispatch = useDispatch()
+    const [addReaction] = useAddReactionMutation()
 
     const reactionButtons = Object.entries(reactionEmoji).map(([name, emoji]) => {
         return (
@@ -18,9 +17,10 @@ const ReactionButtons = ({ todo }) => {
                 key={name}
                 type="button"
                 className="reactionButton"
-                onClick={() =>
-                    dispatch(reactionAdded({ todoId: todo.id, reaction: name }))
-                }
+                onClick={() => {
+                    const newValue = todo.reactions[name] + 1;
+                    addReaction({ todoId: todo.id, reactions: { ...todo.reactions, [name]: newValue } })
+                }}
             >
                 {emoji} {todo.reactions[name]}
             </button>

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { selectTodoById, updateTodo, deleteTodo } from "./todosSlice";
+import { useSelector } from "react-redux";
+import { selectTodoById, useUpdateTodoMutation, useDeleteTodoMutation} from "./todosSlice";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { selectAllUsers } from "../users/usersSlice";
@@ -9,15 +9,15 @@ const EditTodoForm = () => {
   const { todoId } = useParams();
   const navigate = useNavigate();
 
+  const [updateTodo, { isLoading }] = useUpdateTodoMutation()
+  const [deleteTodo] = useDeleteTodoMutation()
+
   const todo = useSelector((state) => selectTodoById(state, Number(todoId)));
   const users = useSelector(selectAllUsers);
 
   const [title, setTitle] = useState(todo?.title);
   const [completed, setCompleted] = useState(todo?.completed);
   const [userId, setUserId] = useState(todo?.userId);
-  const [requestStatus, setRequestStatus] = useState("idle");
-
-  const dispatch = useDispatch();
 
   if (!todo) {
     return (
@@ -34,15 +34,12 @@ const EditTodoForm = () => {
   };
   const onAuthorChanged = (e) => setUserId(Number(e.target.value));
 
-  const canSave = [title, userId].every(Boolean) && requestStatus === "idle";
+  const canSave = [title, userId].every(Boolean) && !isLoading;
 
-  const onSaveTodoClicked = () => {
+  const onSaveTodoClicked = async () => {
     if (canSave) {
       try {
-        setRequestStatus("pending");
-        dispatch(
-          updateTodo({ id: todo.id, title, completed: completed, userId })
-        ).unwrap();
+        await updateTodo({ id: todo.id, title, completed: completed, userId }).unwrap()
 
         setTitle("");
         setCompleted(false);
@@ -50,8 +47,6 @@ const EditTodoForm = () => {
         navigate(`/todo/${todoId}`);
       } catch (err) {
         console.error("Failed to save the todo", err);
-      } finally {
-        setRequestStatus("idle");
       }
     }
   };
@@ -62,10 +57,9 @@ const EditTodoForm = () => {
     </option>
   ));
 
-  const onDeleteTodoClicked = () => {
+  const onDeleteTodoClicked = async () => {
     try {
-      setRequestStatus("pending");
-      dispatch(deleteTodo({ id: todo.id })).unwrap();
+      await deleteTodo({ id: todo.id }).unwrap()
 
       setTitle("");
       setCompleted(false);
@@ -73,8 +67,6 @@ const EditTodoForm = () => {
       navigate("/");
     } catch (err) {
       console.error("Failed to delete the todo", err);
-    } finally {
-      setRequestStatus("idle");
     }
   };
 
